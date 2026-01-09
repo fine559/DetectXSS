@@ -172,7 +172,7 @@
             const modelName = document.getElementById('modelSelect').value;
             addLog(`[系统] 正在加载 ${modelName} 模型的训练历史...`, 'info');
 
-            fetch(`/api/training-history?model=${modelName}`)
+            fetch(`/api/training-history?model_name=${modelName}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {

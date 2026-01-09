@@ -23,12 +23,21 @@ def initialize_app():
     else:
         logger.warning("数据库初始化失败")
 
-    # 初始化示例数据（强制刷新）
+    # 初始化示例数据（只在数据为空时插入）
     try:
-        db.insert_sample_model_metrics(force=True)
-        db.insert_sample_training_history(force=True)
+        db.insert_sample_model_metrics()
+        db.insert_sample_training_history()
     except Exception as e:
         logger.warning(f"示例数据初始化失败: {e}")
+
+    # 导入Kaggle数据集（只在没有数据时导入一次）
+    try:
+        csv_path = 'models/data/XSS_dataset.csv'
+        db.import_dataset_from_csv(csv_path)
+        # 根据实际数据集更新模型指标
+        db.update_model_metrics_from_dataset()
+    except Exception as e:
+        logger.warning(f"导入Kaggle数据集失败: {e}")
 
     # 初始化检测器（如果模型已训练）
     try:
@@ -241,6 +250,44 @@ def history():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/detection-records/<int:record_id>', methods=['DELETE'])
+def delete_detection_record(record_id):
+    """删除单条检测记录"""
+    try:
+        success = db.delete_detection_record(record_id)
+        if success:
+            logger.info(f"已删除检测记录 ID: {record_id}")
+            return jsonify({'success': True, 'message': '删除成功'})
+        else:
+            return jsonify({'success': False, 'error': '记录不存在'}), 404
+    except Exception as e:
+        logger.error(f"删除检测记录失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/detection-records/batch-delete', methods=['POST'])
+def batch_delete_detection_records():
+    """批量删除检测记录"""
+    try:
+        data = request.get_json()
+        if not data or 'record_ids' not in data:
+            return jsonify({'success': False, 'error': '请提供要删除的记录ID列表'}), 400
+        
+        record_ids = data['record_ids']
+        if not isinstance(record_ids, list) or len(record_ids) == 0:
+            return jsonify({'success': False, 'error': '记录ID列表不能为空'}), 400
+        
+        success = db.batch_delete_detection_records(record_ids)
+        if success:
+            logger.info(f"已批量删除 {len(record_ids)} 条检测记录")
+            return jsonify({'success': True, 'message': f'成功删除 {len(record_ids)} 条记录'})
+        else:
+            return jsonify({'success': False, 'error': '批量删除失败'}), 500
+    except Exception as e:
+        logger.error(f"批量删除检测记录失败: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/health')
 def health():
     """健康检查"""
@@ -265,6 +312,94 @@ def model_metrics():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@app.route('/api/confusion-matrix')
+def confusion_matrix():
+    """获取混淆矩阵数据"""
+    try:
+        conn = db.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # 检查是否有检测记录
+                cursor.execute("SELECT COUNT(*) as count FROM detection_records")
+                result = cursor.fetchone()
+
+                if result['count'] == 0:
+                    # 没有检测记录，返回示例数据
+                    return jsonify({
+                        'success': True,
+                        'data': {
+                            'confusion_matrix': [[450, 50], [30, 470]],
+                            'labels': {
+                                'true_negative': 450,
+                                'false_positive': 50,
+                                'false_negative': 30,
+                                'true_positive': 470
+                            },
+                            'is_sample': True
+                        }
+                    })
+
+                # 计算混淆矩阵
+                cursor.execute("""
+                    SELECT
+                        is_xss,
+                        SUM(CASE WHEN ensemble_prob >= 0.5 THEN 1 ELSE 0 END) as predicted_xss,
+                        SUM(CASE WHEN ensemble_prob < 0.5 THEN 1 ELSE 0 END) as predicted_normal
+                    FROM detection_records
+                    GROUP BY is_xss
+                """)
+                results = cursor.fetchall()
+
+                # 构建混淆矩阵
+                # TN: 预测为正常且实际为正常
+                # FP: 预测为XSS但实际为正常
+                # FN: 预测为正常但实际为XSS
+                # TP: 预测为XSS且实际为XSS
+                tn = fp = fn = tp = 0
+
+                for row in results:
+                    if row['is_xss'] == 0:  # 实际为正常
+                        tn = int(row.get('predicted_normal', 0) or 0)
+                        fp = int(row.get('predicted_xss', 0) or 0)
+                    else:  # 实际为XSS
+                        fn = int(row.get('predicted_normal', 0) or 0)
+                        tp = int(row.get('predicted_xss', 0) or 0)
+
+                return jsonify({
+                    'success': True,
+                    'data': {
+                        'confusion_matrix': [[tn, fp], [fn, tp]],
+                        'labels': {
+                            'true_negative': tn,
+                            'false_positive': fp,
+                            'false_negative': fn,
+                            'true_positive': tp
+                        },
+                        'is_sample': False
+                    }
+                })
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.error(f"获取混淆矩阵失败: {e}")
+        import traceback
+        traceback.print_exc()
+        # 如果查询失败，返回示例数据
+        return jsonify({
+            'success': True,
+            'data': {
+                'confusion_matrix': [[450, 50], [30, 470]],
+                'labels': {
+                    'true_negative': 450,
+                    'false_positive': 50,
+                    'false_negative': 30,
+                    'true_positive': 470
+                },
+                'is_sample': True
+            }
+        })
 
 
 @app.route('/api/debug-model-info')
@@ -297,6 +432,22 @@ def debug_model_info():
             'error': str(e)
         }), 500
 
+
+@app.route('/api/dataset-stats')
+def dataset_stats():
+    """获取数据集统计信息"""
+    try:
+        stats = db.get_dataset_statistics()
+        return jsonify({
+            'success': True,
+            'data': stats
+        })
+    except Exception as e:
+        logger.error(f"获取数据集统计失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @app.route('/api/training-history')
@@ -457,6 +608,6 @@ def internal_error(error):
 if __name__ == '__main__':
     # 初始化应用
     initialize_app()
-    
-    # 启动Flask应用
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+    # 启动Flask应用（关闭debug模式以避免重载问题）
+    app.run(debug=False, host='0.0.0.0', port=5000)

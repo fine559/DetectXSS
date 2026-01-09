@@ -7,7 +7,7 @@ try:
 except ImportError:
     import keras
     from keras import layers
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 import pickle
 import logging
 import os
@@ -55,15 +55,22 @@ class XGBoostModel:
         if X_test is not None and y_test is not None:
             y_pred = self.model.predict(X_test_features)
             y_pred_proba = self.model.predict_proba(X_test_features)[:, 1]
-            
+
             metrics = {
                 'accuracy': accuracy_score(y_test, y_pred),
                 'precision': precision_score(y_test, y_pred),
                 'recall': recall_score(y_test, y_pred),
                 'f1': f1_score(y_test, y_pred)
             }
+
+            # 计算AUC
+            try:
+                metrics['auc'] = roc_auc_score(y_test, y_pred_proba)
+            except:
+                metrics['auc'] = None
+
             logger.info(f"XGBoost模型评估结果: {metrics}")
-        
+
         logger.info("XGBoost模型训练完成")
         return metrics
     
@@ -119,6 +126,31 @@ class XGBoostModel:
         except Exception as e:
             logger.error(f"加载XGBoost模型失败: {e}")
             return False
+
+    def evaluate(self, X_test, y_test):
+        """评估模型"""
+        if self.model is None:
+            raise ValueError("模型未训练")
+
+        X_test_features = self.processor.build_combined_features(X_test, fit=False)
+        y_pred = self.model.predict(X_test_features)
+
+        return {
+            'accuracy': accuracy_score(y_test, y_pred),
+            'precision': precision_score(y_test, y_pred),
+            'recall': recall_score(y_test, y_pred),
+            'f1': f1_score(y_test, y_pred)
+        }
+
+    def predict_proba_batch(self, texts):
+        """批量预测概率"""
+        if self.model is None:
+            raise ValueError("模型未训练")
+
+        cleaned_texts = [self.processor.clean_text(text) for text in texts]
+        features = self.processor.build_combined_features(cleaned_texts, fit=False)
+
+        return self.model.predict_proba(features)[:, 1]
 
 
 class BiLSTMModel:
@@ -190,17 +222,24 @@ class BiLSTMModel:
         if X_test is not None and y_test is not None:
             y_pred_proba = self.model.predict(X_test_seq).flatten()
             y_pred = (y_pred_proba > 0.5).astype(int)
-            
+
             metrics = {
                 'accuracy': accuracy_score(y_test, y_pred),
                 'precision': precision_score(y_test, y_pred),
                 'recall': recall_score(y_test, y_pred),
                 'f1': f1_score(y_test, y_pred)
             }
+
+            # 计算AUC
+            try:
+                metrics['auc'] = roc_auc_score(y_test, y_pred_proba)
+            except:
+                metrics['auc'] = None
+
             logger.info(f"BiLSTM模型评估结果: {metrics}")
-        
+
         logger.info("BiLSTM模型训练完成")
-        return metrics
+        return metrics, history
     
     def predict(self, text):
         """预测单个文本"""
@@ -344,17 +383,24 @@ class TransformerModel:
         if X_test is not None and y_test is not None:
             y_pred_proba = self.model.predict(X_test_seq).flatten()
             y_pred = (y_pred_proba > 0.5).astype(int)
-            
+
             metrics = {
                 'accuracy': accuracy_score(y_test, y_pred),
                 'precision': precision_score(y_test, y_pred),
                 'recall': recall_score(y_test, y_pred),
                 'f1': f1_score(y_test, y_pred)
             }
+
+            # 计算AUC
+            try:
+                metrics['auc'] = roc_auc_score(y_test, y_pred_proba)
+            except:
+                metrics['auc'] = None
+
             logger.info(f"Transformer模型评估结果: {metrics}")
-        
+
         logger.info("Transformer模型训练完成")
-        return metrics
+        return metrics, history
     
     def predict(self, text):
         """预测单个文本"""

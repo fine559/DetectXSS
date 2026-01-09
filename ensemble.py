@@ -126,11 +126,11 @@ class XSSDetectorEnsemble:
             xgb_pred, _ = self.xgboost_model.predict(text)
             bilstm_pred, _ = self.bilstm_model.predict(text)
             transformer_pred, _ = self.transformer_model.predict(text)
-            
+
             # 多数投票
             votes = [xgb_pred, bilstm_pred, transformer_pred]
             ensemble_pred = 1 if sum(votes) >= 2 else 0
-            
+
             return {
                 'is_xss': bool(ensemble_pred),
                 'votes': {
@@ -139,13 +139,43 @@ class XSSDetectorEnsemble:
                     'transformer': bool(transformer_pred)
                 }
             }
-            
+
         except Exception as e:
             logger.error(f"投票检测失败: {e}")
             return {
                 'is_xss': False,
                 'error': str(e)
             }
+
+    def predict_proba_batch(self, texts):
+        """批量预测概率（用于评估）"""
+        try:
+            # 使用各模型进行批量预测
+            _, xgb_probs = self.xgboost_model.predict_batch(texts)
+            _, bilstm_probs = self.bilstm_model.predict_batch(texts)
+            _, transformer_probs = self.transformer_model.predict_batch(texts)
+
+            # 加权平均
+            weights = {
+                'xgboost': 0.3,
+                'bilstm': 0.35,
+                'transformer': 0.35
+            }
+
+            ensemble_probs = []
+            for i in range(len(texts)):
+                ensemble_prob = (
+                    weights['xgboost'] * xgb_probs[i] +
+                    weights['bilstm'] * bilstm_probs[i] +
+                    weights['transformer'] * transformer_probs[i]
+                )
+                ensemble_probs.append(ensemble_prob)
+
+            return np.array(ensemble_probs)
+
+        except Exception as e:
+            logger.error(f"批量预测失败: {e}")
+            return np.zeros(len(texts))
 
 
 # 创建全局检测器实例
