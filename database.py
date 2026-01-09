@@ -83,11 +83,33 @@ class Database:
                         precision_score DECIMAL(5,4),
                         recall_score DECIMAL(5,4),
                         f1_score DECIMAL(5,4),
+                        auc_score DECIMAL(5,4),
                         training_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         model_path VARCHAR(255),
                         UNIQUE KEY unique_model (model_name, model_version)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS training_history (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        model_name VARCHAR(50) NOT NULL,
+                        epoch INT NOT NULL,
+                        loss DECIMAL(10,6),
+                        accuracy DECIMAL(5,4),
+                        val_loss DECIMAL(10,6),
+                        val_accuracy DECIMAL(5,4),
+                        training_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_model_name (model_name),
+                        INDEX idx_epoch (epoch)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """)
+
+                # 检查并添加缺失的列（用于数据库迁移）
+                cursor.execute("SHOW COLUMNS FROM model_info LIKE 'auc_score'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE model_info ADD COLUMN auc_score DECIMAL(5,4) AFTER f1_score")
+                    logger.info("添加 auc_score 列到 model_info 表")
+
                 conn.commit()
                 logger.info("数据表创建成功")
             return True
@@ -265,6 +287,236 @@ class Database:
                 'model_stats': {'xgboost': 0, 'bilstm': 0, 'transformer': 0, 'ensemble': 0},
                 'hour_stats': {'total': 0, 'xss_count': 0}
             }
+        finally:
+            conn.close()
+
+
+    def get_model_metrics(self):
+        """获取各模型的评估指标"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # 获取最新的模型指标
+                cursor.execute("""
+                    SELECT model_name, model_version, accuracy, precision_score,
+                           recall_score, f1_score, auc_score, training_time
+                    FROM model_info
+                    ORDER BY training_time DESC
+                """)
+                models_data = cursor.fetchall()
+
+                # 按模型名称分组，取最新版本
+                model_metrics = {}
+                for item in models_data:
+                    model_name = item['model_name']
+                    if model_name not in model_metrics:
+                        model_metrics[model_name] = {
+                            'model_name': model_name,
+                            'model_version': item['model_version'],
+                            'accuracy': float(item['accuracy'] or 0),
+                            'precision_score': float(item['precision_score'] or 0),
+                            'recall_score': float(item['recall_score'] or 0),
+                            'f1_score': float(item['f1_score'] or 0),
+                            'auc_score': float(item['auc_score'] or 0) if item['auc_score'] else None,
+                            'training_time': item['training_time'].strftime('%Y-%m-%d %H:%M:%S')
+                        }
+
+                return list(model_metrics.values())
+        except Exception as e:
+            logger.error(f"获取模型指标失败: {e}")
+            return []
+        finally:
+            conn.close()
+
+
+    def get_training_history(self, model_name, limit=100):
+        """获取模型训练历史"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT epoch, loss, accuracy, val_loss, val_accuracy, training_time
+                    FROM training_history
+                    WHERE model_name = %s
+                    ORDER BY epoch ASC
+                    LIMIT %s
+                """, (model_name, limit))
+                history = cursor.fetchall()
+
+                return [{
+                    'epoch': int(item['epoch']),
+                    'loss': float(item['loss']) if item['loss'] else None,
+                    'accuracy': float(item['accuracy']) if item['accuracy'] else None,
+                    'val_loss': float(item['val_loss']) if item['val_loss'] else None,
+                    'val_accuracy': float(item['val_accuracy']) if item['val_accuracy'] else None
+                } for item in history]
+        except Exception as e:
+            logger.error(f"获取训练历史失败: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def insert_sample_model_metrics(self, force=False):
+        """插入示例模型指标数据"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # 检查是否已有数据
+                cursor.execute("SELECT COUNT(*) as count FROM model_info")
+                count = cursor.fetchone()['count']
+                if count > 0 and not force:
+                    logger.info("模型指标数据已存在，跳过插入")
+                    return True
+
+                # 如果强制刷新，先清空旧数据
+                if force:
+                    cursor.execute("DELETE FROM model_info")
+                    logger.info("清空旧模型指标数据")
+
+                # 插入示例数据
+                sample_data = [
+                    ('xgboost', '1.0', 0.9234, 0.9156, 0.9345, 0.9250, 0.9687, 'models/xgboost_model.pkl'),
+                    ('bilstm', '1.0', 0.9456, 0.9389, 0.9489, 0.9438, 0.9805, 'models/bilstm_model.h5'),
+                    ('transformer', '1.0', 0.9567, 0.9512, 0.9601, 0.9556, 0.9878, 'models/transformer_model.h5'),
+                    ('ensemble', '1.0', 0.9678, 0.9634, 0.9712, 0.9673, 0.9923, 'models/ensemble_model.json')
+                ]
+
+                for model_name, version, acc, prec, rec, f1, auc, path in sample_data:
+                    cursor.execute("""
+                        INSERT INTO model_info (model_name, model_version, accuracy, precision_score,
+                                               recall_score, f1_score, auc_score, model_path)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (model_name, version, acc, prec, rec, f1, auc, path))
+
+                conn.commit()
+                logger.info("示例模型指标数据插入成功")
+                return True
+        except Exception as e:
+            logger.error(f"插入示例模型指标失败: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+
+    def insert_sample_training_history(self, force=False):
+        """插入示例训练历史数据"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # 检查是否已有数据
+                cursor.execute("SELECT COUNT(*) as count FROM training_history")
+                count = cursor.fetchone()['count']
+                if count > 0 and not force:
+                    logger.info("训练历史数据已存在，跳过插入")
+                    return True
+
+                # 如果强制刷新，先清空旧数据
+                if force:
+                    cursor.execute("DELETE FROM training_history")
+                    logger.info("清空旧训练历史数据")
+
+                # 为每个模型生成训练历史
+                import random
+                models = ['xgboost', 'bilstm', 'transformer', 'ensemble']
+
+                for model_name in models:
+                    # 模拟20个epoch的训练数据
+                    for epoch in range(1, 21):
+                        # 模拟loss逐渐下降，accuracy逐渐上升
+                        initial_loss = 0.8 if model_name != 'ensemble' else 0.6
+                        final_loss = 0.2 if model_name != 'ensemble' else 0.1
+                        loss = initial_loss * (0.95 ** (epoch - 1))
+
+                        initial_acc = 0.6 if model_name != 'ensemble' else 0.7
+                        final_acc = 0.92 if model_name != 'ensemble' else 0.97
+                        accuracy = initial_acc + (final_acc - initial_acc) * (epoch / 20)
+
+                        # 添加一些随机波动
+                        loss += random.uniform(-0.02, 0.02)
+                        accuracy += random.uniform(-0.01, 0.01)
+                        loss = max(0.05, min(0.99, loss))
+                        accuracy = max(0.5, min(0.99, accuracy))
+
+                        # 验证数据略好于训练数据
+                        val_loss = loss * random.uniform(0.95, 1.1)
+                        val_accuracy = accuracy * random.uniform(0.98, 1.02)
+                        val_accuracy = min(0.99, val_accuracy)
+
+                        cursor.execute("""
+                            INSERT INTO training_history (model_name, epoch, loss, accuracy,
+                                                         val_loss, val_accuracy)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                        """, (model_name, epoch, loss, accuracy, val_loss, val_accuracy))
+
+                conn.commit()
+                logger.info("示例训练历史数据插入成功")
+                return True
+        except Exception as e:
+            logger.error(f"插入示例训练历史失败: {e}")
+            conn.rollback()
+            return False
+        finally:
+            conn.close()
+
+
+
+    def insert_model_metrics(self, model_name, model_version, metrics):
+        """插入模型评估指标"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                sql = """
+                    INSERT INTO model_info
+                    (model_name, model_version, accuracy, precision_score, recall_score, f1_score, auc_score)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        accuracy = VALUES(accuracy),
+                        precision_score = VALUES(precision_score),
+                        recall_score = VALUES(recall_score),
+                        f1_score = VALUES(f1_score),
+                        auc_score = VALUES(auc_score)
+                """
+                cursor.execute(sql, (
+                    model_name,
+                    model_version,
+                    metrics.get('accuracy'),
+                    metrics.get('precision'),
+                    metrics.get('recall'),
+                    metrics.get('f1'),
+                    metrics.get('auc')
+                ))
+                conn.commit()
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"插入模型指标失败: {e}")
+            return None
+        finally:
+            conn.close()
+
+    def insert_training_history(self, model_name, epoch, history_data):
+        """插入训练历史记录"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                sql = """
+                    INSERT INTO training_history
+                    (model_name, epoch, loss, accuracy, val_loss, val_accuracy)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(sql, (
+                    model_name,
+                    epoch,
+                    history_data.get('loss'),
+                    history_data.get('accuracy'),
+                    history_data.get('val_loss'),
+                    history_data.get('val_accuracy')
+                ))
+                conn.commit()
+                return cursor.lastrowid
+        except Exception as e:
+            logger.error(f"插入训练历史失败: {e}")
+            return None
         finally:
             conn.close()
 

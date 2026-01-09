@@ -16,21 +16,29 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 def initialize_app():
     """初始化应用"""
     logger.info("正在初始化应用...")
-    
+
     # 初始化数据库
     if init_database():
         logger.info("数据库初始化成功")
     else:
         logger.warning("数据库初始化失败")
-    
+
+    # 初始化示例数据（强制刷新）
+    try:
+        db.insert_sample_model_metrics(force=True)
+        db.insert_sample_training_history(force=True)
+    except Exception as e:
+        logger.warning(f"示例数据初始化失败: {e}")
+
     # 初始化检测器（如果模型已训练）
     try:
         init_detector()
         logger.info("模型加载成功")
     except Exception as e:
         logger.warning(f"模型加载失败: {e} (可能需要先训练模型)")
-    
+
     logger.info("应用初始化完成")
+
 
 
 @app.route('/')
@@ -242,9 +250,194 @@ def health():
     })
 
 
+@app.route('/api/model-metrics')
+def model_metrics():
+    """获取模型性能指标"""
+    try:
+        metrics = db.get_model_metrics()
+        return jsonify({
+            'success': True,
+            'data': metrics
+        })
+    except Exception as e:
+        logger.error(f"获取模型指标失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/debug-model-info')
+def debug_model_info():
+    """调试：查看model_info表数据"""
+    try:
+        conn = db.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM model_info")
+                data = cursor.fetchall()
+
+                # 格式化时间
+                for item in data:
+                    for key, value in item.items():
+                        if isinstance(value, datetime.datetime):
+                            item[key] = value.strftime('%Y-%m-%d %H:%M:%S')
+
+                return jsonify({
+                    'success': True,
+                    'count': len(data),
+                    'data': data
+                })
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.error(f"调试查询失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+
+@app.route('/api/training-history')
+def training_history():
+    """获取模型训练历史"""
+    try:
+        model_name = request.args.get('model_name', 'bilstm')
+        limit = request.args.get('limit', 100, type=int)
+        history = db.get_training_history(model_name, limit)
+        return jsonify({
+            'success': True,
+            'data': history
+        })
+    except Exception as e:
+        logger.error(f"获取训练历史失败: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/detect-detail', methods=['POST'])
+def detect_detail():
+    """详细检测分析"""
+    try:
+        data = request.get_json()
+
+        if not data or 'text' not in data:
+            return jsonify({'error': '请提供待检测的文本'}), 400
+
+        text = data['text']
+
+        if not text or not text.strip():
+            return jsonify({'error': '文本不能为空'}), 400
+
+        # 执行检测
+        result = detect_xss(text)
+
+        if 'error' in result:
+            return jsonify({'error': result['error']}), 500
+
+        # 保存检测记录
+        try:
+            db.insert_detection_record(
+                input_text=text,
+                is_xss=result['ensemble']['prediction'],
+                xgboost_prob=result['xgboost']['probability'],
+                bilstm_prob=result['bilstm']['probability'],
+                transformer_prob=result['transformer']['probability'],
+                ensemble_prob=result['ensemble']['probability']
+            )
+        except Exception as db_error:
+            logger.error(f"保存检测记录失败: {db_error}")
+
+        # 计算风险等级
+        ensemble_prob = result['ensemble']['probability']
+        if ensemble_prob >= 0.8:
+            risk_level = 'high'
+            risk_label = '高风险'
+        elif ensemble_prob >= 0.5:
+            risk_level = 'medium'
+            risk_label = '中风险'
+        elif ensemble_prob >= 0.3:
+            risk_level = 'low'
+            risk_label = '低风险'
+        else:
+            risk_level = 'safe'
+            risk_label = '安全'
+
+        # 简单特征提取（高亮可能的危险字符）
+        import re
+        dangerous_patterns = [
+            (r'<script[^>]*>', 'script标签'),
+            (r'javascript:', 'javascript协议'),
+            (r'on\w+\s*=', '事件处理器'),
+            (r'alert\s*\(', 'alert函数'),
+            (r'eval\s*\(', 'eval函数'),
+            (r'document\.', 'document对象'),
+            (r'window\.', 'window对象'),
+            (r'<iframe[^>]*>', 'iframe标签'),
+            (r'<embed[^>]*>', 'embed标签'),
+            (r'<object[^>]*>', 'object标签'),
+            (r'&lt;', 'HTML实体编码'),
+            (r'&gt;', 'HTML实体编码'),
+            (r'%3C', 'URL编码'),
+            (r'%3E', 'URL编码'),
+        ]
+
+        highlighted_text = text
+        matches = []
+        for pattern, description in dangerous_patterns:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                start, end = match.span()
+                matches.append({
+                    'start': start,
+                    'end': end,
+                    'text': text[start:end],
+                    'type': description
+                })
+
+        response = {
+            'is_xss': result['is_xss'],
+            'risk_level': risk_level,
+            'risk_label': risk_label,
+            'xgboost_prob': result['xgboost']['probability'],
+            'bilstm_prob': result['bilstm']['probability'],
+            'transformer_prob': result['transformer']['probability'],
+            'ensemble_prob': result['ensemble']['probability'],
+            'highlighted_text': text,
+            'matches': matches,
+            'message': 'XSS攻击' if result['is_xss'] else '正常'
+        }
+
+        return jsonify(response)
+
+    except Exception as e:
+        logger.error(f"详细检测失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/analysis')
+def analysis_page():
+    """模型性能分析页面"""
+    return render_template('analysis.html')
+
+
+@app.route('/detail')
+def detail_page():
+    """检测结果详情页面"""
+    return render_template('detail.html')
+
+
+@app.route('/training')
+def training_page():
+    """模型训练页面"""
+    return render_template('training.html')
+
+
 @app.route('/train')
 def train_page():
-    """训练页面"""
+    """训练页面（保留兼容性）"""
     return render_template('train.html')
 
 

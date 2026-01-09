@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>检测结果详情 - XSS检测系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        .risk-high {
+            background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        }
+        .risk-medium {
+            background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        }
+        .risk-low {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .risk-safe {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+        .highlight-dangerous {
+            background-color: #ffe6e6;
+            border: 2px solid #ff0000;
+            border-radius: 3px;
+            padding: 2px 4px;
+            margin: 0 2px;
+            font-weight: bold;
+            color: #ff0000;
+        }
+        .result-code {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .feature-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: white;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .model-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .progress {
+            height: 30px;
+            margin-top: 10px;
+        }
+        .back-link {
+            color: white;
+            text-decoration: none;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        .back-link:hover {
+            color: #f0f0f0;
+        }
+        .attack-type-badge {
+            font-size: 0.9rem;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i> 返回首页
+        </a>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h3><i class="fas fa-search-plus"></i> 检测结果详情分析</h3>
+                <p class="mb-0">详细的检测结果和风险分析</p>
+            </div>
+            <div class="card-body p-4">
+                <form id="detectForm">
+                    <div class="mb-3">
+                        <label for="inputText" class="form-label h5">输入待检测文本</label>
+                        <textarea
+                            class="form-control"
+                            id="inputText"
+                            rows="5"
+                            placeholder="请输入需要检测的URL或文本内容..."
+                            required
+                        ></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search"></i> 开始详细分析
+                        </button>
+                    </div>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">正在详细分析中...</p>
+                </div>
+
+                <!-- 检测结果容器 -->
+                <div id="resultContainer" style="display: none;">
+                    <!-- 风险等级卡片 -->
+                    <div class="card mt-4" id="riskCard">
+                        <div class="card-header text-white" id="riskHeader">
+                            <h4 class="mb-0" id="riskTitle">
+                                <i class="fas fa-exclamation-triangle"></i> 风险等级
+                            </h4>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div style="font-size: 3rem; font-weight: bold;" id="riskLevelText">
+                                        --
+                                    </div>
+                                    <div class="text-muted">风险等级</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert" id="riskAlert" role="alert">
+                                        <div id="riskDescription"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 攻击类型检测 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5><i class="fas fa-bug"></i> 攻击类型分析</h5>
+                        </div>
+                        <div class="card-body" id="attackTypes">
+                        </div>
+                    </div>
+
+                    <!-- 危险特征高亮 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5><i class="fas fa-highlighter"></i> 危险特征高亮</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="result-code" id="highlightedText">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 特征匹配列表 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5><i class="fas fa-list"></i> 匹配到的危险特征</h5>
+                        </div>
+                        <div class="card-body" id="featureMatches">
+                        </div>
+                    </div>
+
+                    <!-- 各模型检测结果 -->
+                    <div class="card mt-4">
+                        <div class="card-header bg-white">
+                            <h5><i class="fas fa-chart-pie"></i> 各模型检测结果</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="model-result">
+                                        <h6 class="text-primary"><i class="fas fa-tree"></i> XGBoost</h6>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="xgboostBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="xgboostProb"></small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="model-result">
+                                        <h6 class="text-info"><i class="fas fa-brain"></i> BiLSTM</h6>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="bilstmBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="bilstmProb"></small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="model-result">
+                                        <h6 class="text-warning"><i class="fas fa-project-diagram"></i> Transformer</h6>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="transformerBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="transformerProb"></small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="model-result">
+                                        <h6 class="text-danger"><i class="fas fa-layer-group"></i> 集成模型</h6>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="ensembleBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="ensembleProb"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 最终结论 -->
+                    <div class="card mt-4 mb-4">
+                        <div class="card-header bg-white">
+                            <h5><i class="fas fa-clipboard-check"></i> 检测结论</h5>
+                        </div>
+                        <div class="card-body" id="finalConclusion">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('detectForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const inputText = document.getElementById('inputText').value.trim();
+            if (!inputText) {
+                alert('请输入需要检测的文本');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+
+            fetch('/api/detect-detail', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text: inputText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                displayDetailedResult(data);
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                alert('检测失败，请重试');
+            });
+        });
+
+        function displayDetailedResult(data) {
+            document.getElementById('resultContainer').style.display = 'block';
+
+            // 风险等级
+            displayRiskLevel(data);
+
+            // 攻击类型
+            displayAttackTypes(data);
+
+            // 特征高亮
+            displayHighlightedText(data);
+
+            // 特征匹配
+            displayFeatureMatches(data);
+
+            // 模型概率
+            displayModelProbabilities(data);
+
+            // 最终结论
+            displayConclusion(data);
+        }
+
+        function displayRiskLevel(data) {
+            const riskCard = document.getElementById('riskCard');
+            const riskHeader = document.getElementById('riskHeader');
+            const riskLevelText = document.getElementById('riskLevelText');
+            const riskAlert = document.getElementById('riskAlert');
+            const riskDescription = document.getElementById('riskDescription');
+
+            // 移除所有风险类
+            riskHeader.classList.remove('risk-high', 'risk-medium', 'risk-low', 'risk-safe');
+
+            switch(data.risk_level) {
+                case 'high':
+                    riskHeader.classList.add('risk-high');
+                    riskLevelText.textContent = '高风险';
+                    riskAlert.className = 'alert alert-danger';
+                    riskDescription.innerHTML = `<strong>警告：</strong> 检测到高度可疑的XSS攻击代码，集成模型判定概率为 ${(data.ensemble_prob * 100).toFixed(2)}%。请立即检查并采取安全措施！`;
+                    break;
+                case 'medium':
+                    riskHeader.classList.add('risk-medium');
+                    riskLevelText.textContent = '中风险';
+                    riskAlert.className = 'alert alert-warning';
+                    riskDescription.innerHTML = `<strong>注意：</strong> 检测到可能的XSS攻击特征，集成模型判定概率为 ${(data.ensemble_prob * 100).toFixed(2)}%。建议进一步审查。`;
+                    break;
+                case 'low':
+                    riskHeader.classList.add('risk-low');
+                    riskLevelText.textContent = '低风险';
+                    riskAlert.className = 'alert alert-info';
+                    riskDescription.innerHTML = `<strong>提醒：</strong> 检测到少量可疑特征，集成模型判定概率为 ${(data.ensemble_prob * 100).toFixed(2)}%。虽然风险较低，但仍需关注。`;
+                    break;
+                case 'safe':
+                    riskHeader.classList.add('risk-safe');
+                    riskLevelText.textContent = '安全';
+                    riskAlert.className = 'alert alert-success';
+                    riskDescription.innerHTML = `<strong>安全：</strong> 未检测到明显的XSS攻击特征，集成模型判定概率仅为 ${(data.ensemble_prob * 100).toFixed(2)}%。内容相对安全。`;
+                    break;
+            }
+        }
+
+        function displayAttackTypes(data) {
+            const container = document.getElementById('attackTypes');
+
+            // 根据特征推断可能的攻击类型
+            const attackTypes = [];
+
+            if (data.matches && data.matches.length > 0) {
+                const features = data.matches.map(m => m.type.toLowerCase()).join(' ');
+
+                if (features.includes('script标签') || features.includes('iframe标签')) {
+                    attackTypes.push({
+                        type: '反射型XSS',
+                        description: '通过URL参数注入恶意脚本，在受害者浏览器中执行',
+                        severity: 'high',
+                        color: 'bg-danger'
+                    });
+                }
+                if (features.includes('javascript:') || features.includes('事件处理器')) {
+                    attackTypes.push({
+                        type: '存储型XSS',
+                        description: '恶意脚本存储在服务器端，每次访问时加载并执行',
+                        severity: 'high',
+                        color: 'bg-danger'
+                    });
+                }
+                if (features.includes('document.') || features.includes('window.')) {
+                    attackTypes.push({
+                        type: 'DOM型XSS',
+                        description: '通过DOM操作修改页面内容，动态注入恶意代码',
+                        severity: 'medium',
+                        color: 'bg-warning'
+                    });
+                }
+                if (features.includes('html实体编码') || features.includes('url编码')) {
+                    attackTypes.push({
+                        type: '编码绕过',
+                        description: '使用编码方式尝试绕过过滤机制',
+                        severity: 'medium',
+                        color: 'bg-warning'
+                    });
+                }
+            }
+
+            if (attackTypes.length === 0) {
+                if (!data.is_xss) {
+                    container.innerHTML = '<p class="text-muted text-center">未检测到明确的攻击类型</p>';
+                } else {
+                    container.innerHTML = '<p class="text-muted text-center">无法确定具体攻击类型，建议人工审查</p>';
+                }
+                return;
+            }
+
+            container.innerHTML = '<div class="row">';
+            attackTypes.forEach(attack => {
+                container.innerHTML += `
+                    <div class="col-md-6 mb-3">
+                        <div class="feature-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6>
+                                    <span class="badge attack-type-badge ${attack.color}">
+                                        <i class="fas fa-shield-alt"></i> ${attack.type}
+                                    </span>
+                                </h6>
+                                <small class="text-${attack.severity === 'high' ? 'danger' : 'warning'}">
+                                    ${attack.severity === 'high' ? '高危' : '中等'}
+                                </small>
+                            </div>
+                            <p class="mt-2 mb-0 text-muted">${attack.description}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML += '</div>';
+        }
+
+        function displayHighlightedText(data) {
+            const container = document.getElementById('highlightedText');
+
+            if (!data.matches || data.matches.length === 0) {
+                container.textContent = data.highlighted_text;
+                return;
+            }
+
+            // 对匹配位置进行排序
+            const sortedMatches = [...data.matches].sort((a, b) => a.start - b.start);
+
+            let html = '';
+            let lastIndex = 0;
+
+            sortedMatches.forEach(match => {
+                // 添加匹配前的文本
+                html += escapeHtml(data.highlighted_text.substring(lastIndex, match.start));
+                // 添加高亮的匹配文本
+                html += `<span class="highlight-dangerous" title="${match.type}">${escapeHtml(match.text)}</span>`;
+                lastIndex = match.end;
+            });
+
+            // 添加剩余文本
+            html += escapeHtml(data.highlighted_text.substring(lastIndex));
+
+            container.innerHTML = html;
+        }
+
+        function displayFeatureMatches(data) {
+            const container = document.getElementById('featureMatches');
+
+            if (!data.matches || data.matches.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">未匹配到已知的危险特征</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            data.matches.forEach(match => {
+                const div = document.createElement('div');
+                div.className = 'feature-item';
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <strong><i class="fas fa-exclamation-circle text-danger"></i> ${match.type}</strong>
+                        <small class="text-muted">位置: ${match.start}-${match.end}</small>
+                    </div>
+                    <div class="mt-2">
+                        <code class="text-danger">${escapeHtml(match.text)}</code>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function displayModelProbabilities(data) {
+            updateProgressBar('xgboostBar', 'xgboostProb', data.xgboost_prob);
+            updateProgressBar('bilstmBar', 'bilstmProb', data.bilstm_prob);
+            updateProgressBar('transformerBar', 'transformerProb', data.transformer_prob);
+            updateProgressBar('ensembleBar', 'ensembleProb', data.ensemble_prob);
+        }
+
+        function updateProgressBar(barId, probId, probability) {
+            const percentage = (probability * 100).toFixed(2);
+            const bar = document.getElementById(barId);
+            const prob = document.getElementById(probId);
+
+            bar.style.width = percentage + '%';
+            bar.setAttribute('aria-valuenow', percentage);
+
+            if (probability > 0.7) {
+                bar.className = 'progress-bar bg-danger';
+            } else if (probability > 0.4) {
+                bar.className = 'progress-bar bg-warning';
+            } else {
+                bar.className = 'progress-bar bg-success';
+            }
+
+            prob.textContent = 'XSS概率: ' + percentage + '%';
+        }
+
+        function displayConclusion(data) {
+            const container = document.getElementById('finalConclusion');
+
+            if (data.is_xss) {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> 检测结论：存在XSS攻击风险</h5>
+                        <hr>
+                        <p><strong>综合判定：</strong> 集成模型以 <strong>${(data.ensemble_prob * 100).toFixed(2)}%</strong> 的概率判定该内容包含XSS攻击代码。</p>
+                        <p><strong>风险分析：</strong></p>
+                        <ul>
+                            <li>XGBoost模型判定概率：${(data.xgboost_prob * 100).toFixed(2)}%</li>
+                            <li>BiLSTM模型判定概率：${(data.bilstm_prob * 100).toFixed(2)}%</li>
+                            <li>Transformer模型判定概率：${(data.transformer_prob * 100).toFixed(2)}%</li>
+                            <li>检测到 ${data.matches ? data.matches.length : 0} 个危险特征</li>
+                        </ul>
+                        <p class="mb-0"><strong>建议：</strong> ${data.risk_level === 'high' ? '立即阻止该请求并记录IP，建议进行黑名单处理。' : data.risk_level === 'medium' ? '进一步审查内容，必要时进行人工审核。' : '保持监控，定期检查相关日志。'}</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle"></i> 检测结论：内容安全</h5>
+                        <hr>
+                        <p><strong>综合判定：</strong> 集成模型以 <strong>${(100 - data.ensemble_prob * 100).toFixed(2)}%</strong> 的置信度认为该内容是安全的。</p>
+                        <p><strong>模型评估：</strong></p>
+                        <ul>
+                            <li>XGBoost模型判定概率：${(data.xgboost_prob * 100).toFixed(2)}%</li>
+                            <li>BiLSTM模型判定概率：${(data.bilstm_prob * 100).toFixed(2)}%</li>
+                            <li>Transformer模型判定概率：${(data.transformer_prob * 100).toFixed(2)}%</li>
+                            <li>未检测到明显危险特征</li>
+                        </ul>
+                        <p class="mb-0"><strong>结论：</strong> 该内容通过多重模型验证，未发现XSS攻击特征，可以安全使用。</p>
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

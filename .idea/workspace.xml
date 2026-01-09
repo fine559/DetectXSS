@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="基本功能完成且进行了进一步的优化">
+    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="添加上监控仪表盘">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
@@ -84,7 +84,7 @@
       <option name="presentableId" value="Default" />
       <updated>1767926197092</updated>
       <workItem from="1767926198100" duration="3372000" />
-      <workItem from="1767944009773" duration="3800000" />
+      <workItem from="1767944009773" duration="6882000" />
     </task>
     <task id="LOCAL-00001" summary="基本功能完成">
       <option name="closed" value="true" />
@@ -110,7 +110,15 @@
       <option name="project" value="LOCAL" />
       <updated>1767944486976</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="添加上监控仪表盘">
+      <option name="closed" value="true" />
+      <created>1767949022480</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1767949022480</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -119,6 +127,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="基本功能完成" />
     <MESSAGE value="基本功能完成且进行了进一步的优化" />
-    <option name="LAST_COMMIT_MESSAGE" value="基本功能完成且进行了进一步的优化" />
+    <MESSAGE value="添加上监控仪表盘" />
+    <option name="LAST_COMMIT_MESSAGE" value="添加上监控仪表盘" />
   </component>
 </project>
