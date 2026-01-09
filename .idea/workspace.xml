@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="基本功能完成" />
+    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="基本功能完成且进行了进一步的优化">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -79,6 +84,7 @@
       <option name="presentableId" value="Default" />
       <updated>1767926197092</updated>
       <workItem from="1767926198100" duration="3372000" />
+      <workItem from="1767944009773" duration="3800000" />
     </task>
     <task id="LOCAL-00001" summary="基本功能完成">
       <option name="closed" value="true" />
@@ -96,7 +102,15 @@
       <option name="project" value="LOCAL" />
       <updated>1767932502477</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="基本功能完成且进行了进一步的优化">
+      <option name="closed" value="true" />
+      <created>1767944486976</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1767944486976</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -104,6 +118,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="基本功能完成" />
-    <option name="LAST_COMMIT_MESSAGE" value="基本功能完成" />
+    <MESSAGE value="基本功能完成且进行了进一步的优化" />
+    <option name="LAST_COMMIT_MESSAGE" value="基本功能完成且进行了进一步的优化" />
   </component>
 </project>

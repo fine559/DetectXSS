@@ -196,6 +196,78 @@ class Database:
         finally:
             conn.close()
 
+    def get_dashboard_data(self, days=7):
+        """获取仪表盘数据"""
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cursor:
+                # 获取最近N天的检测趋势（按日期降序，最近的在前）
+                cursor.execute("""
+                    SELECT DATE(detection_time) as date,
+                           COUNT(*) as total,
+                           SUM(CASE WHEN is_xss = 1 THEN 1 ELSE 0 END) as xss_count
+                    FROM detection_records
+                    WHERE DATE(detection_time) >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                    GROUP BY DATE(detection_time)
+                    ORDER BY date DESC
+                """, (days,))
+                trend_data = cursor.fetchall()
+
+                # 将日期对象转换为字符串，将Decimal转换为float
+                for item in trend_data:
+                    item['date'] = str(item['date'])
+                    if 'total' in item:
+                        item['total'] = int(item['total'])
+                    if 'xss_count' in item and isinstance(item['xss_count'], Decimal):
+                        item['xss_count'] = int(item['xss_count'])
+
+                # 获取模型性能统计
+                cursor.execute("""
+                    SELECT
+                        AVG(xgboost_prob) as avg_xgboost,
+                        AVG(bilstm_prob) as avg_bilstm,
+                        AVG(transformer_prob) as avg_transformer,
+                        AVG(ensemble_prob) as avg_ensemble
+                    FROM detection_records
+                    WHERE DATE(detection_time) >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                """, (days,))
+                model_stats = cursor.fetchone()
+
+                # 获取最近24小时检测统计
+                cursor.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        SUM(CASE WHEN is_xss = 1 THEN 1 ELSE 0 END) as xss_count
+                    FROM detection_records
+                    WHERE detection_time >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                """)
+                hour_stats = cursor.fetchone()
+
+                return {
+                    'trend': trend_data,
+                    'model_stats': {
+                        'xgboost': float(model_stats['avg_xgboost'] or 0),
+                        'bilstm': float(model_stats['avg_bilstm'] or 0),
+                        'transformer': float(model_stats['avg_transformer'] or 0),
+                        'ensemble': float(model_stats['avg_ensemble'] or 0)
+                    },
+                    'hour_stats': {
+                        'total': int(hour_stats['total'] or 0),
+                        'xss_count': int(hour_stats['xss_count'] or 0)
+                    }
+                }
+        except Exception as e:
+            logger.error(f"获取仪表盘数据失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'trend': [],
+                'model_stats': {'xgboost': 0, 'bilstm': 0, 'transformer': 0, 'ensemble': 0},
+                'hour_stats': {'total': 0, 'xss_count': 0}
+            }
+        finally:
+            conn.close()
+
     def close(self):
         """关闭数据库连接池"""
         if self.connection_pool:

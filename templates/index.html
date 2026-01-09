@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XSS攻击检测系统</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -12,7 +14,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px;
         }
         .card {
             border: none;
@@ -24,6 +26,15 @@
             color: white;
             border-radius: 15px 15px 0 0 !important;
             padding: 20px;
+        }
+        .nav-tabs .nav-link {
+            color: #667eea;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #764ba2;
+            background-color: white;
+            border-color: #667eea #667eea white;
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -113,6 +124,25 @@
             width: 3rem;
             height: 3rem;
         }
+        .model-weight-bar {
+            height: 30px;
+            border-radius: 15px;
+            margin: 10px 0;
+        }
+        .batch-result-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .batch-result-item.xss {
+            border-left: 4px solid #dc3545;
+            background-color: #fff5f5;
+        }
+        .batch-result-item.safe {
+            border-left: 4px solid #28a745;
+            background-color: #f0fff4;
+        }
     </style>
 </head>
 <body>
@@ -123,166 +153,490 @@
                 <p class="mb-0">基于多模型深度学习的XSS攻击检测</p>
             </div>
             <div class="card-body p-4">
-                <form id="detectForm">
-                    <div class="mb-3">
-                        <label for="inputText" class="form-label h5">输入待检测文本</label>
-                        <textarea 
-                            class="form-control" 
-                            id="inputText" 
-                            rows="6" 
-                            placeholder="请输入需要检测的URL或文本内容..."
-                            required
-                        ></textarea>
-                    </div>
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> 开始检测
+                <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="detect-tab" data-bs-toggle="tab" data-bs-target="#detect" type="button" role="tab">
+                            <i class="fas fa-search"></i> 单次检测
                         </button>
-                    </div>
-                </form>
-                
-                <div class="loading" id="loading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">正在检测中...</p>
-                </div>
-                
-                <div class="result-box" id="resultBox">
-                    <h4 id="resultTitle"></h4>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <h5>各模型检测结果</h5>
-                            <div class="model-result">
-                                <strong>XGBoost:</strong>
-                                <div class="progress">
-                                    <div class="progress-bar" id="xgboostBar" role="progressbar"></div>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">
+                            <i class="fas fa-list"></i> 批量检测
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rules-tab" data-bs-toggle="tab" data-bs-target="#rules" type="button" role="tab">
+                            <i class="fas fa-cogs"></i> 检测规则
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                            <i class="fas fa-chart-line"></i> 监控仪表盘
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                            <i class="fas fa-history"></i> 检测历史
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="myTabContent">
+                    <!-- 单次检测 -->
+                    <div class="tab-pane fade show active" id="detect" role="tabpanel">
+                        <form id="detectForm">
+                            <div class="mb-3">
+                                <label for="inputText" class="form-label h5">输入待检测文本</label>
+                                <textarea
+                                    class="form-control"
+                                    id="inputText"
+                                    rows="6"
+                                    placeholder="请输入需要检测的URL或文本内容..."
+                                    required
+                                ></textarea>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> 开始检测
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="loading" id="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">正在检测中...</p>
+                        </div>
+
+                        <div class="result-box" id="resultBox">
+                            <h4 id="resultTitle"></h4>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h5>各模型检测结果</h5>
+                                    <div class="model-result">
+                                        <strong>XGBoost:</strong>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="xgboostBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="xgboostProb"></small>
+                                    </div>
+                                    <div class="model-result">
+                                        <strong>BiLSTM:</strong>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="bilstmBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="bilstmProb"></small>
+                                    </div>
+                                    <div class="model-result">
+                                        <strong>Transformer:</strong>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="transformerBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="transformerProb"></small>
+                                    </div>
                                 </div>
-                                <small id="xgboostProb"></small>
-                            </div>
-                            <div class="model-result">
-                                <strong>BiLSTM:</strong>
-                                <div class="progress">
-                                    <div class="progress-bar" id="bilstmBar" role="progressbar"></div>
+                                <div class="col-md-6">
+                                    <h5>集成结果</h5>
+                                    <div class="model-result">
+                                        <strong>加权平均:</strong>
+                                        <div class="progress">
+                                            <div class="progress-bar" id="ensembleBar" role="progressbar"></div>
+                                        </div>
+                                        <small id="ensembleProb"></small>
+                                    </div>
+                                    <div class="alert mt-3" id="finalAlert"></div>
                                 </div>
-                                <small id="bilstmProb"></small>
-                            </div>
-                            <div class="model-result">
-                                <strong>Transformer:</strong>
-                                <div class="progress">
-                                    <div class="progress-bar" id="transformerBar" role="progressbar"></div>
-                                </div>
-                                <small id="transformerProb"></small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>集成结果</h5>
-                            <div class="model-result">
-                                <strong>加权平均:</strong>
-                                <div class="progress">
-                                    <div class="progress-bar" id="ensembleBar" role="progressbar"></div>
-                                </div>
-                                <small id="ensembleProb"></small>
-                            </div>
-                            <div class="alert mt-3" id="finalAlert"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="statistics-card">
-                    <h4 class="text-center mb-4">检测统计</h4>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="stat-item">
-                                <div class="stat-number text-primary" id="totalCount">0</div>
-                                <div class="text-muted">总检测次数</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="stat-item">
-                                <div class="stat-number text-danger" id="xssCount">0</div>
-                                <div class="text-muted">XSS攻击</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="stat-item">
-                                <div class="stat-number text-success" id="safeCount">0</div>
-                                <div class="text-muted">正常请求</div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="statistics-card">
-                    <h4 class="mb-4">检测历史</h4>
-                    <div id="historyList"></div>
-                    
-                    <!-- 分页控件 -->
-                    <nav aria-label="分页导航" class="mt-4" id="paginationContainer" style="display: none;">
-                        <ul class="pagination justify-content-center" id="pagination">
-                        </ul>
-                    </nav>
+
+                    <!-- 批量检测 -->
+                    <div class="tab-pane fade" id="batch" role="tabpanel">
+                        <div class="mb-3">
+                            <label for="batchText" class="form-label h5">批量检测输入</label>
+                            <textarea
+                                class="form-control"
+                                id="batchText"
+                                rows="10"
+                                placeholder="每行输入一个待检测的文本..."
+                            ></textarea>
+                            <small class="text-muted">每行一个文本，最多支持100条</small>
+                        </div>
+                        <div class="text-center">
+                            <button type="button" class="btn btn-primary" onclick="batchDetect()">
+                                <i class="fas fa-search"></i> 批量检测
+                            </button>
+                        </div>
+
+                        <div class="loading" id="batchLoading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">正在批量检测中...</p>
+                        </div>
+
+                        <div id="batchResults" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- 检测规则 -->
+                    <div class="tab-pane fade" id="rules" role="tabpanel">
+                        <h4 class="mb-4">检测模型配置</h4>
+                        <div id="rulesContent"></div>
+                    </div>
+
+                    <!-- 监控仪表盘 -->
+                    <div class="tab-pane fade" id="dashboard" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="statistics-card">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-primary" id="dashboardTotal">0</div>
+                                        <div class="text-muted">总检测次数</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="statistics-card">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-danger" id="dashboardXss">0</div>
+                                        <div class="text-muted">XSS攻击(24h)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="statistics-card">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-success" id="dashboardNormal">0</div>
+                                        <div class="text-muted">正常请求(24h)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="statistics-card">
+                                    <div class="stat-item">
+                                        <div class="stat-number text-warning" id="dashboardXssRate">0%</div>
+                                        <div class="text-muted">攻击率(24h)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-8">
+                                <div class="statistics-card">
+                                    <h5>检测趋势图</h5>
+                                    <div style="position: relative; height: 300px;">
+                                        <canvas id="trendChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="statistics-card">
+                                    <h5>模型性能统计</h5>
+                                    <div class="mt-3">
+                                        <div>
+                                            <small>XGBoost 平均XSS概率</small>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-info" id="xgboostAvgBar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="xgboostAvgText">0%</small>
+                                        </div>
+                                        <div class="mt-3">
+                                            <small>BiLSTM 平均XSS概率</small>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-warning" id="bilstmAvgBar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="bilstmAvgText">0%</small>
+                                        </div>
+                                        <div class="mt-3">
+                                            <small>Transformer 平均XSS概率</small>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-danger" id="transformerAvgBar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="transformerAvgText">0%</small>
+                                        </div>
+                                        <div class="mt-3">
+                                            <small>集成模型 平均XSS概率</small>
+                                            <div class="progress">
+                                                <div class="progress-bar" id="ensembleAvgBar" style="width: 0%"></div>
+                                            </div>
+                                            <small id="ensembleAvgText">0%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 检测历史 -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="statistics-card">
+                            <h4 class="mb-4">检测历史</h4>
+                            <div id="historyList"></div>
+
+                            <nav aria-label="分页导航" class="mt-4" id="paginationContainer" style="display: none;">
+                                <ul class="pagination justify-content-center" id="pagination"></ul>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 页面加载时获取统计数据
+        let trendChart = null;
+
+        // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
             loadStatistics();
             loadHistory();
+            loadRules();
+            loadDashboard(true); // 首次加载，强制渲染图表
+
+            // 仪表盘Tab激活时加载数据
+            document.getElementById('dashboard-tab').addEventListener('shown.bs.tab', function () {
+                loadDashboard(false); // tab切换时加载
+            });
         });
-        
-        // 提交检测表单
+
+        // 单次检测表单提交
         document.getElementById('detectForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const inputText = document.getElementById('inputText').value.trim();
             if (!inputText) {
                 alert('请输入需要检测的文本');
                 return;
             }
-            
-            // 显示加载动画
+
             document.getElementById('loading').style.display = 'block';
             document.getElementById('resultBox').style.display = 'none';
-            
-            // 发送检测请求
+
             fetch('/api/detect', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ text: inputText })
             })
             .then(response => response.json())
             .then(data => {
-                // 隐藏加载动画
                 document.getElementById('loading').style.display = 'none';
-
-                // 显示结果
                 displayResult(data);
-
-                // 刷新统计数据和历史记录（重置到第一页）
                 loadStatistics();
-                loadHistory(1);
             })
             .catch(error => {
                 document.getElementById('loading').style.display = 'none';
-                console.error('Error:', error);
                 alert('检测失败，请重试');
             });
         });
-        
+
+        // 批量检测
+        function batchDetect() {
+            const batchText = document.getElementById('batchText').value.trim();
+            if (!batchText) {
+                alert('请输入待检测的文本');
+                return;
+            }
+
+            const texts = batchText.split('\n').map(t => t.trim()).filter(t => t);
+            if (texts.length === 0) {
+                alert('请输入有效的文本');
+                return;
+            }
+
+            if (texts.length > 100) {
+                alert('最多支持100条文本');
+                return;
+            }
+
+            document.getElementById('batchLoading').style.display = 'block';
+            document.getElementById('batchResults').innerHTML = '';
+
+            fetch('/api/batch-detect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ texts: texts })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('batchLoading').style.display = 'none';
+                displayBatchResults(data);
+                loadStatistics();
+            })
+            .catch(error => {
+                document.getElementById('batchLoading').style.display = 'none';
+                alert('批量检测失败，请重试');
+            });
+        }
+
+        // 显示批量检测结果
+        function displayBatchResults(data) {
+            const container = document.getElementById('batchResults');
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>批量检测完成：</strong>
+                    共检测 ${data.total} 条，发现 XSS 攻击 ${data.xss_count} 条，正常 ${data.normal_count} 条
+                </div>
+            `;
+
+            data.results.forEach((result, index) => {
+                const div = document.createElement('div');
+                div.className = 'batch-result-item ' + (result.is_xss ? 'xss' : 'safe');
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between">
+                        <span class="${result.is_xss ? 'text-danger' : 'text-success'}">
+                            <strong>#${index + 1} ${result.is_xss ? '[XSS攻击]' : '[正常]'}</strong>
+                        </span>
+                        <small>集成概率: ${(result.ensemble_prob * 100).toFixed(2)}%</small>
+                    </div>
+                    <div class="mt-2">
+                        <code>${escapeHtml(result.text.substring(0, 150))}${result.text.length > 150 ? '...' : ''}</code>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 加载检测规则
+        function loadRules() {
+            fetch('/api/rules')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('rulesContent');
+                    container.innerHTML = '';
+
+                    data.models.forEach(model => {
+                        const div = document.createElement('div');
+                        div.className = 'model-result';
+                        div.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5><i class="fas fa-cube" style="color: ${model.color}"></i> ${model.name}</h5>
+                                <span class="badge" style="background-color: ${model.color}">权重: ${(model.weight * 100).toFixed(0)}%</span>
+                            </div>
+                            <div class="model-weight-bar" style="background-color: ${model.color}; width: ${model.weight * 100}%;"></div>
+                            <small class="text-muted">${model.description}</small>
+                        `;
+                        container.appendChild(div);
+                    });
+
+                    container.innerHTML += `
+                        <div class="alert alert-info mt-3">
+                            <strong>集成方法：</strong> ${data.method === 'weighted_average' ? '加权平均' : data.method}
+                            <br>
+                            <strong>检测阈值：</strong> ${data.threshold}
+                            <br>
+                            <strong>更新时间：</strong> ${data.update_time}
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error loading rules:', error);
+                });
+        }
+
+        // 加载仪表盘数据
+        function loadDashboard(forceRenderChart = false) {
+            fetch('/api/dashboard?days=7')
+                .then(response => response.json())
+                .then(data => {
+                    // 更新统计卡片
+                    document.getElementById('dashboardTotal').textContent = data.hour_stats.total;
+                    document.getElementById('dashboardXss').textContent = data.hour_stats.xss_count;
+                    document.getElementById('dashboardNormal').textContent = data.hour_stats.total - data.hour_stats.xss_count;
+                    const rate = data.hour_stats.total > 0 ?
+                        ((data.hour_stats.xss_count / data.hour_stats.total) * 100).toFixed(1) : 0;
+                    document.getElementById('dashboardXssRate').textContent = rate + '%';
+
+                    // 更新模型性能
+                    updateModelBar('xgboostAvgBar', 'xgboostAvgText', data.model_stats.xgboost);
+                    updateModelBar('bilstmAvgBar', 'bilstmAvgText', data.model_stats.bilstm);
+                    updateModelBar('transformerAvgBar', 'transformerAvgText', data.model_stats.transformer);
+                    updateModelBar('ensembleAvgBar', 'ensembleAvgText', data.model_stats.ensemble);
+
+                    // 更新趋势图：强制渲染 或 tab激活时
+                    if (forceRenderChart || document.querySelector('#dashboard-tab').classList.contains('active')) {
+                        updateTrendChart(data.trend);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard:', error);
+                });
+        }
+
+        function updateModelBar(barId, textId, value) {
+            const percentage = (value * 100).toFixed(2);
+            document.getElementById(barId).style.width = percentage + '%';
+            document.getElementById(textId).textContent = percentage + '%';
+        }
+
+        function updateTrendChart(trendData) {
+            const canvas = document.getElementById('trendChart');
+            const ctx = canvas.getContext('2d');
+
+            // 数据是DESC排序（最近的在前），需要反转成ASC（最早的在前）以正确显示趋势
+            const reversedTrend = [...trendData].reverse();
+            const labels = reversedTrend.map(d => d.date);
+            const totalData = reversedTrend.map(d => d.total);
+            const xssData = reversedTrend.map(d => d.xss_count);
+
+            // 销毁旧图表实例
+            if (trendChart) {
+                trendChart.destroy();
+                trendChart = null;
+            }
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '总检测次数',
+                        data: totalData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }, {
+                        label: 'XSS攻击次数',
+                        data: xssData,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // 显示检测结果
         function displayResult(data) {
             const resultBox = document.getElementById('resultBox');
             const resultTitle = document.getElementById('resultTitle');
-            
+
             resultBox.style.display = 'block';
-            
+
             if (data.is_xss) {
                 resultBox.className = 'result-box result-xss';
                 resultTitle.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 检测到XSS攻击!';
@@ -294,33 +648,30 @@
                 document.getElementById('finalAlert').className = 'alert alert-success';
                 document.getElementById('finalAlert').innerHTML = '<strong>安全:</strong> 文本内容正常，未检测到XSS攻击特征';
             }
-            
-            // 更新各模型结果
+
             updateProgressBar('xgboostBar', 'xgboostProb', data.xgboost_prob);
             updateProgressBar('bilstmBar', 'bilstmProb', data.bilstm_prob);
             updateProgressBar('transformerBar', 'transformerProb', data.transformer_prob);
             updateProgressBar('ensembleBar', 'ensembleProb', data.ensemble_prob);
         }
-        
-        // 更新进度条
+
         function updateProgressBar(barId, probId, probability) {
             const percentage = (probability * 100).toFixed(2);
             const bar = document.getElementById(barId);
             const prob = document.getElementById(probId);
-            
+
             bar.style.width = percentage + '%';
             bar.setAttribute('aria-valuenow', percentage);
-            
+
             if (probability > 0.5) {
                 bar.className = 'progress-bar bg-danger';
             } else {
                 bar.className = 'progress-bar bg-success';
             }
-            
+
             prob.textContent = 'XSS概率: ' + percentage + '%';
         }
-        
-        // 加载统计数据
+
         function loadStatistics() {
             fetch('/api/statistics')
                 .then(response => response.json())
@@ -332,25 +683,20 @@
                 })
                 .catch(error => {
                     console.error('Error loading statistics:', error);
-                    console.error('Error details:', error.message);
                 });
         }
-        
-        // 加载检测历史
+
         function loadHistory(page = 1) {
             fetch(`/api/history?page=${page}&page_size=10`)
                 .then(response => response.json())
                 .then(result => {
-                    console.log('历史记录完整响应:', result);
-
-                    if (!result || !result.data) {
-                        console.error('响应数据格式不正确:', result);
-                        document.getElementById('historyList').innerHTML = '<p class="text-center text-danger">数据格式错误</p>';
-                        return;
-                    }
-
                     const historyList = document.getElementById('historyList');
                     historyList.innerHTML = '';
+
+                    if (!result || !result.data) {
+                        historyList.innerHTML = '<p class="text-center text-danger">数据格式错误</p>';
+                        return;
+                    }
 
                     const data = result.data;
                     const pagination = result.pagination;
@@ -361,9 +707,7 @@
                         return;
                     }
 
-                    // 显示历史记录
                     data.forEach(item => {
-                        // 添加数据验证
                         if (!item) return;
 
                         const inputText = item.input_text || '无内容';
@@ -383,14 +727,11 @@
                             <div class="mt-2">
                                 <code>${escapeHtml(inputText.substring(0, 100))}${inputText.length > 100 ? '...' : ''}</code>
                             </div>
-                            <small class="text-muted">
-                                集成概率: ${(ensembleProb * 100).toFixed(2)}%
-                            </small>
+                            <small class="text-muted">集成概率: ${(ensembleProb * 100).toFixed(2)}%</small>
                         `;
                         historyList.appendChild(div);
                     });
 
-                    // 更新分页控件
                     updatePagination(pagination);
                 })
                 .catch(error => {
@@ -399,11 +740,10 @@
                 });
         }
 
-        // 更新分页控件
         function updatePagination(pagination) {
             const container = document.getElementById('paginationContainer');
             const paginationEl = document.getElementById('pagination');
-            
+
             if (pagination.total_pages <= 1) {
                 container.style.display = 'none';
                 return;
@@ -412,14 +752,12 @@
             container.style.display = 'block';
             paginationEl.innerHTML = '';
 
-            // 上一页
             paginationEl.innerHTML += `
                 <li class="page-item ${!pagination.has_prev ? 'disabled' : ''}">
                     <a class="page-link" href="#" onclick="loadHistory(${pagination.page - 1}); return false;">上一页</a>
                 </li>
             `;
 
-            // 页码
             const maxVisiblePages = 5;
             let startPage = Math.max(1, pagination.page - Math.floor(maxVisiblePages / 2));
             let endPage = Math.min(pagination.total_pages, startPage + maxVisiblePages - 1);
@@ -429,11 +767,7 @@
             }
 
             if (startPage > 1) {
-                paginationEl.innerHTML += `
-                    <li class="page-item">
-                        <a class="page-link" href="#" onclick="loadHistory(1); return false;">1</a>
-                    </li>
-                `;
+                paginationEl.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="loadHistory(1); return false;">1</a></li>`;
                 if (startPage > 2) {
                     paginationEl.innerHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
                 }
@@ -451,33 +785,16 @@
                 if (endPage < pagination.total_pages - 1) {
                     paginationEl.innerHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
                 }
-                paginationEl.innerHTML += `
-                    <li class="page-item">
-                        <a class="page-link" href="#" onclick="loadHistory(${pagination.total_pages}); return false;">${pagination.total_pages}</a>
-                    </li>
-                `;
+                paginationEl.innerHTML += `<li class="page-item"><a class="page-link" href="#" onclick="loadHistory(${pagination.total_pages}); return false;">${pagination.total_pages}</a></li>`;
             }
 
-            // 下一页
             paginationEl.innerHTML += `
                 <li class="page-item ${!pagination.has_next ? 'disabled' : ''}">
                     <a class="page-link" href="#" onclick="loadHistory(${pagination.page + 1}); return false;">下一页</a>
                 </li>
             `;
-
-            // 显示分页信息
-            const startRecord = (pagination.page - 1) * pagination.page_size + 1;
-            const endRecord = Math.min(pagination.page * pagination.page_size, pagination.total);
-            paginationEl.innerHTML += `
-                <li class="page-item disabled">
-                    <span class="page-link">
-                        ${startRecord}-${endRecord} / 共 ${pagination.total} 条
-                    </span>
-                </li>
-            `;
         }
-        
-        // HTML转义
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;

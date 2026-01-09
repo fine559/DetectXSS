@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from database import init_database, db
 from ensemble import init_detector, detect_xss
 import logging
-import json
+import datetime
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -109,6 +109,110 @@ def statistics():
         return jsonify(stats)
     except Exception as e:
         logger.error(f"获取统计数据失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/batch-detect', methods=['POST'])
+def batch_detect():
+    """批量检测API"""
+    try:
+        data = request.get_json()
+
+        if not data or 'texts' not in data:
+            return jsonify({'error': '请提供待检测的文本列表'}), 400
+
+        texts = data['texts']
+
+        if not isinstance(texts, list) or len(texts) == 0:
+            return jsonify({'error': '文本列表不能为空'}), 400
+
+        if len(texts) > 100:
+            return jsonify({'error': '批量检测最多支持100条文本'}), 400
+
+        # 限制每条文本长度
+        for text in texts:
+            if len(text) > 5000:
+                return jsonify({'error': '单条文本长度超过限制（最多5000字符）'}), 400
+
+        from ensemble import detector
+        results = detector.detect_batch(texts)
+
+        if not results:
+            return jsonify({'error': '批量检测失败'}), 500
+
+        # 保存检测记录
+        saved_count = 0
+        for result in results:
+            try:
+                db.insert_detection_record(
+                    input_text=result['text'],
+                    is_xss=result['is_xss'],
+                    xgboost_prob=result['xgboost_prob'],
+                    bilstm_prob=result['bilstm_prob'],
+                    transformer_prob=result['transformer_prob'],
+                    ensemble_prob=result['ensemble_prob']
+                )
+                saved_count += 1
+            except Exception as db_error:
+                logger.error(f"保存检测记录失败: {db_error}")
+
+        return jsonify({
+            'total': len(results),
+            'xss_count': sum(1 for r in results if r['is_xss']),
+            'normal_count': sum(1 for r in results if not r['is_xss']),
+            'saved_count': saved_count,
+            'results': results
+        })
+
+    except Exception as e:
+        logger.error(f"批量检测失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/rules')
+def get_rules():
+    """获取检测规则配置"""
+    try:
+        rules = {
+            'models': [
+                {
+                    'name': 'XGBoost',
+                    'weight': 0.3,
+                    'description': '梯度提升树模型，擅长特征提取',
+                    'color': '#667eea'
+                },
+                {
+                    'name': 'BiLSTM',
+                    'weight': 0.35,
+                    'description': '双向LSTM，擅长序列模式识别',
+                    'color': '#764ba2'
+                },
+                {
+                    'name': 'Transformer',
+                    'weight': 0.35,
+                    'description': '自注意力机制，擅长上下文理解',
+                    'color': '#f093fb'
+                }
+            ],
+            'threshold': 0.5,
+            'method': 'weighted_average',
+            'update_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        return jsonify(rules)
+    except Exception as e:
+        logger.error(f"获取规则配置失败: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/dashboard')
+def dashboard():
+    """获取仪表盘数据"""
+    try:
+        days = request.args.get('days', 7, type=int)
+        data = db.get_dashboard_data(days=days)
+        return jsonify(data)
+    except Exception as e:
+        logger.error(f"获取仪表盘数据失败: {e}")
         return jsonify({'error': str(e)}), 500
 
 
