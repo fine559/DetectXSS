@@ -3,7 +3,7 @@ import logging
 from data_processor import XSSDataProcessor
 from models import XGBoostModel, BiLSTMModel, TransformerModel
 from database import db
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import numpy as np
 import pandas as pd
 

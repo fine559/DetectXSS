@@ -23,19 +23,10 @@ def initialize_app():
     else:
         logger.warning("数据库初始化失败")
 
-    # 初始化示例数据（只在数据为空时插入）
-    try:
-        db.insert_sample_model_metrics()
-        db.insert_sample_training_history()
-    except Exception as e:
-        logger.warning(f"示例数据初始化失败: {e}")
-
     # 导入Kaggle数据集（只在没有数据时导入一次）
     try:
         csv_path = 'models/data/XSS_dataset.csv'
         db.import_dataset_from_csv(csv_path)
-        # 根据实际数据集更新模型指标
-        db.update_model_metrics_from_dataset()
     except Exception as e:
         logger.warning(f"导入Kaggle数据集失败: {e}")
 

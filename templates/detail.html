@@ -248,6 +248,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // 确保loading初始状态为隐藏
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('resultContainer').style.display = 'none';
+        });
+
         document.getElementById('detectForm').addEventListener('submit', function(e) {
             e.preventDefault();
 

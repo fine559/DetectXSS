@@ -6,20 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="添加上模型性能分析，检测结果详情，模型训练与评估模块">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database.py" beforeDir="false" afterPath="$PROJECT_DIR$/database.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ensemble.py" beforeDir="false" afterPath="$PROJECT_DIR$/ensemble.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bilstm_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_model.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bilstm_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_processor.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/metrics.json" beforeDir="false" afterPath="$PROJECT_DIR$/models/metrics.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/transformer_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_model.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/transformer_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_processor.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/xgboost_model.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/xgboost_model.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/analysis.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/training.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/training.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/train_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/train_models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -95,7 +82,7 @@
       <option name="presentableId" value="Default" />
       <updated>1767926197092</updated>
       <workItem from="1767926198100" duration="3372000" />
-      <workItem from="1767944009773" duration="16282000" />
+      <workItem from="1767944009773" duration="18653000" />
     </task>
     <task id="LOCAL-00001" summary="基本功能完成">
       <option name="closed" value="true" />
@@ -137,7 +124,15 @@
       <option name="project" value="LOCAL" />
       <updated>1767961653873</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="添加上模型性能分析，检测结果详情，模型训练与评估模块">
+      <option name="closed" value="true" />
+      <created>1767990377771</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1767990377771</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
