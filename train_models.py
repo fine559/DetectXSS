@@ -77,38 +77,28 @@ def train_all_models():
     # 保存数据集信息
     dataset_size = len(df)
 
-    # 清空旧训练历史
-    logger.info("\n[2/6] 清空旧训练历史...")
-    conn = db.get_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("DELETE FROM training_history")
-            conn.commit()
-            logger.info("已清空旧训练历史数据")
-    except Exception as e:
-        logger.error(f"清空训练历史失败: {e}")
-    finally:
-        conn.close()
-    
+    # 临时存储训练历史数据，训练完成后再写入数据库
+    temp_training_history = []
+
     # 2. 训练XGBoost模型
     logger.info("\n[3/6] 训练XGBoost模型...")
     xgboost_model = XGBoostModel()
     xgboost_metrics = xgboost_model.train(X_train, y_train, X_test, y_test)
     xgboost_model.save()
     logger.info(f"XGBoost模型评估: {xgboost_metrics}")
-    
+
     # XGBoost不返回history，模拟训练历史
     for epoch in range(1, 11):
-        db.insert_training_history(
-            model_name='xgboost',
-            epoch=epoch,
-            history_data={
+        temp_training_history.append({
+            'model_name': 'xgboost',
+            'epoch': epoch,
+            'history_data': {
                 'loss': max(0.1, 0.5 - epoch * 0.04),
                 'accuracy': min(0.99, 0.7 + epoch * 0.03),
                 'val_loss': max(0.1, 0.5 - epoch * 0.04 + np.random.uniform(-0.02, 0.02)),
                 'val_accuracy': min(0.99, 0.7 + epoch * 0.03 + np.random.uniform(-0.01, 0.01))
             }
-        )
+        })
     
     # 3. 训练BiLSTM模型
     logger.info("\n[4/6] 训练BiLSTM模型...")
@@ -117,20 +107,20 @@ def train_all_models():
     bilstm_model.save()
     logger.info(f"BiLSTM模型评估: {bilstm_metrics}")
     
-    # 保存BiLSTM训练历史
-    logger.info("保存BiLSTM训练历史到数据库...")
+    # 临时保存BiLSTM训练历史
+    logger.info("临时保存BiLSTM训练历史...")
     for epoch in range(1, len(bilstm_history.history['loss']) + 1):
         idx = epoch - 1
-        db.insert_training_history(
-            model_name='bilstm',
-            epoch=epoch,
-            history_data={
+        temp_training_history.append({
+            'model_name': 'bilstm',
+            'epoch': epoch,
+            'history_data': {
                 'loss': float(bilstm_history.history['loss'][idx]) if 'loss' in bilstm_history.history else None,
                 'accuracy': float(bilstm_history.history['accuracy'][idx]) if 'accuracy' in bilstm_history.history else None,
                 'val_loss': float(bilstm_history.history['val_loss'][idx]) if 'val_loss' in bilstm_history.history else None,
                 'val_accuracy': float(bilstm_history.history['val_accuracy'][idx]) if 'val_accuracy' in bilstm_history.history else None
             }
-        )
+        })
     
     # 4. 训练Transformer模型
     logger.info("\n[5/6] 训练Transformer模型...")
@@ -139,20 +129,20 @@ def train_all_models():
     transformer_model.save()
     logger.info(f"Transformer模型评估: {transformer_metrics}")
     
-    # 保存Transformer训练历史
-    logger.info("保存Transformer训练历史到数据库...")
+    # 临时保存Transformer训练历史
+    logger.info("临时保存Transformer训练历史...")
     for epoch in range(1, len(transformer_history.history['loss']) + 1):
         idx = epoch - 1
-        db.insert_training_history(
-            model_name='transformer',
-            epoch=epoch,
-            history_data={
+        temp_training_history.append({
+            'model_name': 'transformer',
+            'epoch': epoch,
+            'history_data': {
                 'loss': float(transformer_history.history['loss'][idx]) if 'loss' in transformer_history.history else None,
                 'accuracy': float(transformer_history.history['accuracy'][idx]) if 'accuracy' in transformer_history.history else None,
                 'val_loss': float(transformer_history.history['val_loss'][idx]) if 'val_loss' in transformer_history.history else None,
                 'val_accuracy': float(transformer_history.history['val_accuracy'][idx]) if 'val_accuracy' in transformer_history.history else None
             }
-        )
+        })
     
     # 5. 测试集成模型
     logger.info("\n[6/7] 测试集成模型...")
@@ -177,20 +167,52 @@ def train_all_models():
             logger.info(f"  -> 检测结果: {'XSS攻击' if result['is_xss'] else '正常'}")
             logger.info(f"  -> 集成概率: {result['ensemble']['probability']:.4f}")
     
-    # 保存ensemble训练历史（模拟）
-    logger.info("\n保存Ensemble训练历史到数据库...")
+    # 临时保存ensemble训练历史（模拟）
+    logger.info("\n临时保存Ensemble训练历史...")
     for epoch in range(1, 11):
-        db.insert_training_history(
-            model_name='ensemble',
-            epoch=epoch,
-            history_data={
+        temp_training_history.append({
+            'model_name': 'ensemble',
+            'epoch': epoch,
+            'history_data': {
                 'loss': max(0.08, 0.45 - epoch * 0.04),
                 'accuracy': min(0.995, 0.75 + epoch * 0.03),
                 'val_loss': max(0.08, 0.45 - epoch * 0.04 + np.random.uniform(-0.02, 0.02)),
                 'val_accuracy': min(0.995, 0.75 + epoch * 0.03 + np.random.uniform(-0.01, 0.01))
             }
-        )
-    
+        })
+
+    # 所有模型训练完成后，一次性写入数据库
+    logger.info("\n[6/7] 保存训练历史到数据库...")
+    conn = db.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # 清空旧训练历史
+            cursor.execute("DELETE FROM training_history")
+            conn.commit()
+            logger.info("已清空旧训练历史数据")
+
+            # 批量插入新的训练历史
+            for history_item in temp_training_history:
+                cursor.execute("""
+                    INSERT INTO training_history (model_name, epoch, loss, accuracy, val_loss, val_accuracy)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    history_item['model_name'],
+                    history_item['epoch'],
+                    history_item['history_data'].get('loss'),
+                    history_item['history_data'].get('accuracy'),
+                    history_item['history_data'].get('val_loss'),
+                    history_item['history_data'].get('val_accuracy')
+                ))
+            conn.commit()
+            logger.info(f"成功保存 {len(temp_training_history)} 条训练历史记录")
+    except Exception as e:
+        logger.error(f"保存训练历史失败: {e}")
+    finally:
+        conn.close()
+
+    # 5. 测试集成模型
+    logger.info("\n[7/7] 测试集成模型...")
     logger.info("\n" + "=" * 60)
     logger.info("所有模型训练完成!")
     logger.info("=" * 60)
