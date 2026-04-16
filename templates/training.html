@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #ffffff;
             min-height: 100vh;
             padding: 20px;
         }
@@ -17,14 +17,15 @@
             max-width: 1400px;
         }
         .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background: #ffffff;
         }
         .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
-            border-radius: 15px 15px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             padding: 20px;
         }
         .metrics-card {
@@ -35,13 +36,13 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         .back-link {
-            color: white;
+            color: #000000;
             text-decoration: none;
             margin-bottom: 20px;
             display: inline-block;
         }
         .back-link:hover {
-            color: #f0f0f0;
+            color: #333333;
         }
         .model-select {
             margin-bottom: 20px;
@@ -71,12 +72,12 @@
 <body>
     <div class="container">
         <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i> 返回首页
+            返回首页
         </a>
 
         <div class="card mt-3">
             <div class="card-header">
-                <h3><i class="fas fa-graduation-cap"></i> 模型训练与评估</h3>
+                <h3>模型训练与评估</h3>
                 <p class="mb-0">查看和管理模型训练过程</p>
             </div>
             <div class="card-body p-4">
@@ -148,7 +149,7 @@
                 <div class="row mt-4">
                     <div class="col-md-12">
                         <div class="metrics-card">
-                            <h5><i class="fas fa-terminal"></i> 训练日志</h5>
+                            <h5>训练日志</h5>
                             <div class="log-container" id="logContainer">
                                 <div class="log-entry log-info">[系统] 准备加载训练历史数据...</div>
                             </div>

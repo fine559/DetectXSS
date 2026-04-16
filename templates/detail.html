@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #ffffff;
             min-height: 100vh;
             padding: 20px;
         }
@@ -16,14 +16,15 @@
             max-width: 1200px;
         }
         .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background: #ffffff;
         }
         .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
-            border-radius: 15px 15px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             padding: 20px;
         }
         .risk-high {
@@ -79,13 +80,13 @@
             margin-top: 10px;
         }
         .back-link {
-            color: white;
+            color: #000000;
             text-decoration: none;
             margin-bottom: 20px;
             display: inline-block;
         }
         .back-link:hover {
-            color: #f0f0f0;
+            color: #333333;
         }
         .attack-type-badge {
             font-size: 0.9rem;
@@ -97,12 +98,12 @@
 <body>
     <div class="container">
         <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i> 返回首页
+            返回首页
         </a>
 
         <div class="card mt-3">
             <div class="card-header">
-                <h3><i class="fas fa-search-plus"></i> 检测结果详情分析</h3>
+                <h3>检测结果详情分析</h3>
                 <p class="mb-0">详细的检测结果和风险分析</p>
             </div>
             <div class="card-body p-4">
@@ -119,7 +120,7 @@
                     </div>
                     <div class="text-center">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-search"></i> 开始详细分析
+                            开始详细分析
                         </button>
                     </div>
                 </form>
@@ -137,7 +138,7 @@
                     <div class="card mt-4" id="riskCard">
                         <div class="card-header text-white" id="riskHeader">
                             <h4 class="mb-0" id="riskTitle">
-                                <i class="fas fa-exclamation-triangle"></i> 风险等级
+                                风险等级
                             </h4>
                         </div>
                         <div class="card-body text-center">
@@ -160,7 +161,7 @@
                     <!-- 攻击类型检测 -->
                     <div class="card mt-4">
                         <div class="card-header bg-white">
-                            <h5><i class="fas fa-bug"></i> 攻击类型分析</h5>
+                            <h5>攻击类型分析</h5>
                         </div>
                         <div class="card-body" id="attackTypes">
                         </div>
@@ -169,7 +170,7 @@
                     <!-- 危险特征高亮 -->
                     <div class="card mt-4">
                         <div class="card-header bg-white">
-                            <h5><i class="fas fa-highlighter"></i> 危险特征高亮</h5>
+                            <h5>危险特征高亮</h5>
                         </div>
                         <div class="card-body">
                             <div class="result-code" id="highlightedText">
@@ -180,7 +181,7 @@
                     <!-- 特征匹配列表 -->
                     <div class="card mt-4">
                         <div class="card-header bg-white">
-                            <h5><i class="fas fa-list"></i> 匹配到的危险特征</h5>
+                            <h5>匹配到的危险特征</h5>
                         </div>
                         <div class="card-body" id="featureMatches">
                         </div>
@@ -189,13 +190,13 @@
                     <!-- 各模型检测结果 -->
                     <div class="card mt-4">
                         <div class="card-header bg-white">
-                            <h5><i class="fas fa-chart-pie"></i> 各模型检测结果</h5>
+                            <h5>各模型检测结果</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="model-result">
-                                        <h6 class="text-primary"><i class="fas fa-tree"></i> XGBoost</h6>
+                                        <h6 class="text-primary">XGBoost</h6>
                                         <div class="progress">
                                             <div class="progress-bar" id="xgboostBar" role="progressbar"></div>
                                         </div>
@@ -204,7 +205,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="model-result">
-                                        <h6 class="text-info"><i class="fas fa-brain"></i> BiLSTM</h6>
+                                        <h6 class="text-info">BiLSTM</h6>
                                         <div class="progress">
                                             <div class="progress-bar" id="bilstmBar" role="progressbar"></div>
                                         </div>
@@ -213,7 +214,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="model-result">
-                                        <h6 class="text-warning"><i class="fas fa-project-diagram"></i> Transformer</h6>
+                                        <h6 class="text-warning">Transformer</h6>
                                         <div class="progress">
                                             <div class="progress-bar" id="transformerBar" role="progressbar"></div>
                                         </div>
@@ -222,7 +223,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="model-result">
-                                        <h6 class="text-danger"><i class="fas fa-layer-group"></i> 集成模型</h6>
+                                        <h6 class="text-danger">集成模型</h6>
                                         <div class="progress">
                                             <div class="progress-bar" id="ensembleBar" role="progressbar"></div>
                                         </div>
@@ -236,7 +237,7 @@
                     <!-- 最终结论 -->
                     <div class="card mt-4 mb-4">
                         <div class="card-header bg-white">
-                            <h5><i class="fas fa-clipboard-check"></i> 检测结论</h5>
+                            <h5>检测结论</h5>
                         </div>
                         <div class="card-body" id="finalConclusion">
                         </div>
@@ -402,7 +403,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <h6>
                                     <span class="badge attack-type-badge ${attack.color}">
-                                        <i class="fas fa-shield-alt"></i> ${attack.type}
+                                        ${attack.type}
                                     </span>
                                 </h6>
                                 <small class="text-${attack.severity === 'high' ? 'danger' : 'warning'}">
@@ -459,7 +460,7 @@
                 div.className = 'feature-item';
                 div.innerHTML = `
                     <div class="d-flex justify-content-between">
-                        <strong><i class="fas fa-exclamation-circle text-danger"></i> ${match.type}</strong>
+                        <strong>${match.type}</strong>
                         <small class="text-muted">位置: ${match.start}-${match.end}</small>
                     </div>
                     <div class="mt-2">
@@ -502,7 +503,7 @@
             if (data.is_xss) {
                 container.innerHTML = `
                     <div class="alert alert-danger">
-                        <h5><i class="fas fa-exclamation-triangle"></i> 检测结论：存在XSS攻击风险</h5>
+                        <h5>检测结论：存在XSS攻击风险</h5>
                         <hr>
                         <p><strong>综合判定：</strong> 集成模型以 <strong>${(data.ensemble_prob * 100).toFixed(2)}%</strong> 的概率判定该内容包含XSS攻击代码。</p>
                         <p><strong>风险分析：</strong></p>
@@ -518,7 +519,7 @@
             } else {
                 container.innerHTML = `
                     <div class="alert alert-success">
-                        <h5><i class="fas fa-check-circle"></i> 检测结论：内容安全</h5>
+                        <h5>检测结论：内容安全</h5>
                         <hr>
                         <p><strong>综合判定：</strong> 集成模型以 <strong>${(100 - data.ensemble_prob * 100).toFixed(2)}%</strong> 的置信度认为该内容是安全的。</p>
                         <p><strong>模型评估：</strong></p>

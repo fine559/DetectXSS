@@ -4,9 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="添加上模型性能分析，检测结果详情，模型训练与评估模块">
+    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="完整版">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/bilstm_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_model.h5" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/bilstm_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_processor.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/metrics.json" beforeDir="false" afterPath="$PROJECT_DIR$/models/metrics.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/transformer_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_model.h5" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/transformer_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_processor.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/xgboost_model.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/xgboost_model.pkl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/analysis.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/detail.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/training.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/training.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,22 +41,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.app.executor": "Run",
+    "Python.database.executor": "Run",
+    "Python.train_models.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "E:/DetectXSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "vcs.Git",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="DetectXSS" type="Python.FlaskServer">
       <module name="DetectXSS" />
@@ -69,7 +84,6 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PY-253.29346.142" />
         <option value="bundled-python-sdk-f2b7a9f6281b-6e1f45a539f7-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.29346.142" />
       </set>
     </attachedChunks>
@@ -83,6 +97,7 @@
       <updated>1767926197092</updated>
       <workItem from="1767926198100" duration="3372000" />
       <workItem from="1767944009773" duration="18653000" />
+      <workItem from="1768023147472" duration="4312000" />
     </task>
     <task id="LOCAL-00001" summary="基本功能完成">
       <option name="closed" value="true" />
@@ -132,7 +147,23 @@
       <option name="project" value="LOCAL" />
       <updated>1767990377771</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="完整版">
+      <option name="closed" value="true" />
+      <created>1768023161362</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1768023161362</updated>
+    </task>
+    <task id="LOCAL-00008" summary="完整版">
+      <option name="closed" value="true" />
+      <created>1768023630102</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1768023630102</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -154,6 +185,7 @@
     <MESSAGE value="基本功能完成且进行了进一步的优化" />
     <MESSAGE value="添加上监控仪表盘" />
     <MESSAGE value="添加上模型性能分析，检测结果详情，模型训练与评估模块" />
-    <option name="LAST_COMMIT_MESSAGE" value="添加上模型性能分析，检测结果详情，模型训练与评估模块" />
+    <MESSAGE value="完整版" />
+    <option name="LAST_COMMIT_MESSAGE" value="完整版" />
   </component>
 </project>

@@ -9,7 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #ffffff;
             min-height: 100vh;
             padding: 20px;
         }
@@ -17,14 +17,15 @@
             max-width: 1200px;
         }
         .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background: #ffffff;
         }
         .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
-            border-radius: 15px 15px 0 0 !important;
+            border-radius: 8px 8px 0 0 !important;
             padding: 20px;
         }
         .nav-tabs .nav-link {
@@ -37,13 +38,24 @@
             border-color: #667eea #667eea white;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             border: none;
             padding: 12px 30px;
             font-size: 16px;
         }
         .btn-primary:hover {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            background: #5568d3;
+        }
+        .btn-analysis {
+            background: #764ba2;
+            border: none;
+            padding: 4px 8px;
+            font-size: 16px;
+            color: white;
+        }
+        .btn-analysis:hover {
+            background: #653d8a;
+            color: white;
         }
         .result-box {
             margin-top: 20px;
@@ -178,34 +190,34 @@
     <div class="container">
         <div class="card">
             <div class="card-header text-center">
-                <h2><i class="fas fa-shield-alt"></i> XSS攻击检测系统</h2>
+                <h2>XSS攻击检测系统</h2>
                 <p class="mb-0">基于多模型深度学习的XSS攻击检测</p>
             </div>
             <div class="card-body p-4">
                 <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="detect-tab" data-bs-toggle="tab" data-bs-target="#detect" type="button" role="tab">
-                            <i class="fas fa-search"></i> 单次检测
+                            单次检测
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch" type="button" role="tab">
-                            <i class="fas fa-list"></i> 批量检测
+                            批量检测
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="rules-tab" data-bs-toggle="tab" data-bs-target="#rules" type="button" role="tab">
-                            <i class="fas fa-cogs"></i> 检测规则
+                            检测规则
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
-                            <i class="fas fa-chart-line"></i> 监控仪表盘
+                            监控仪表盘
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
-                            <i class="fas fa-history"></i> 检测历史
+                            检测历史
                         </button>
                     </li>
                 </ul>
@@ -214,11 +226,11 @@
                 <div class="row mt-3">
                     <div class="col-md-12">
                         <div class="alert alert-info mb-0">
-                            <h6 class="mb-2"><i class="fas fa-link"></i> 快速访问</h6>
+                            <h6 class="mb-2">快速访问</h6>
                             <div>
-                                <a href="/analysis" class="btn btn-sm btn-primary me-2"><i class="fas fa-chart-bar"></i> 模型性能分析</a>
-                                <a href="/detail" class="btn btn-sm btn-warning me-2"><i class="fas fa-search-plus"></i> 检测结果详情</a>
-                                <a href="/training" class="btn btn-sm btn-success"><i class="fas fa-graduation-cap"></i> 模型训练与评估</a>
+                                <a href="/analysis" class="btn btn-sm btn-analysis me-2">模型性能分析</a>
+                                <a href="/detail" class="btn btn-sm btn-warning me-2">检测结果详情</a>
+                                <a href="/training" class="btn btn-sm btn-success">模型训练与评估</a>
                             </div>
                         </div>
                     </div>
@@ -241,7 +253,7 @@
                             </div>
                             <div class="text-center">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> 开始检测
+                                    开始检测
                                 </button>
                             </div>
                         </form>
@@ -309,7 +321,7 @@
                         </div>
                         <div class="text-center">
                             <button type="button" class="btn btn-primary" onclick="batchDetect()">
-                                <i class="fas fa-search"></i> 批量检测
+                                批量检测
                             </button>
                         </div>
 
@@ -429,7 +441,7 @@
                                     <span><strong>已选择 <span id="selectedCount">0</span> 条记录</strong></span>
                                     <div>
                                         <button class="btn btn-danger btn-sm" onclick="batchDeleteSelected()">
-                                            <i class="fas fa-trash"></i> 批量删除
+                                            批量删除
                                         </button>
                                         <button class="btn btn-secondary btn-sm" onclick="clearSelection()">
                                             取消选择
@@ -578,7 +590,7 @@
                         div.className = 'model-result';
                         div.innerHTML = `
                             <div class="d-flex justify-content-between align-items-center">
-                                <h5><i class="fas fa-cube" style="color: ${model.color}"></i> ${model.name}</h5>
+                                <h5 style="color: ${model.color}">${model.name}</h5>
                                 <span class="badge" style="background-color: ${model.color}">权重: ${(model.weight * 100).toFixed(0)}%</span>
                             </div>
                             <div class="model-weight-bar" style="background-color: ${model.color}; width: ${model.weight * 100}%;"></div>
@@ -705,12 +717,12 @@
 
             if (data.is_xss) {
                 resultBox.className = 'result-box result-xss';
-                resultTitle.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 检测到XSS攻击!';
+                resultTitle.innerHTML = '检测到XSS攻击!';
                 document.getElementById('finalAlert').className = 'alert alert-danger';
                 document.getElementById('finalAlert').innerHTML = '<strong>警告:</strong> 检测到XSS攻击代码，请谨慎处理!';
             } else {
                 resultBox.className = 'result-box result-safe';
-                resultTitle.innerHTML = '<i class="fas fa-check-circle"></i> 未检测到XSS攻击';
+                resultTitle.innerHTML = '未检测到XSS攻击';
                 document.getElementById('finalAlert').className = 'alert alert-success';
                 document.getElementById('finalAlert').innerHTML = '<strong>安全:</strong> 文本内容正常，未检测到XSS攻击特征';
             }
@@ -807,7 +819,7 @@
                                     <small class="text-muted">集成概率: ${(ensembleProb * 100).toFixed(2)}%</small>
                                     <div class="action-buttons">
                                         <button class="btn-delete" onclick="deleteRecord(${recordId})">
-                                            <i class="fas fa-trash"></i> 删除
+                                            删除
                                         </button>
                                     </div>
                                 </div>

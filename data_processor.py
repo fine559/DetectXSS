@@ -104,6 +104,7 @@ class XSSDataProcessor:
         # 特征8: 编码模式数量
         features['hex_encoding'] = len(re.findall(r'\\x[0-9a-fA-F]{2}', text))
         features['html_entity'] = len(re.findall(r'&#[0-9]+;', text))
+        features['html_hex_entity'] = len(re.findall(r'&#x[0-9a-fA-F]+', text))
         
         return list(features.values())
     
