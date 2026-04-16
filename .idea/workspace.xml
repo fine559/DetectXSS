@@ -4,19 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="完整版">
+    <list default="true" id="4a205168-c552-42db-a3da-2ab25ed3f45d" name="更改" comment="修改">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bilstm_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_model.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/bilstm_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/bilstm_processor.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/metrics.json" beforeDir="false" afterPath="$PROJECT_DIR$/models/metrics.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/transformer_model.h5" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_model.h5" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/transformer_processor.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/transformer_processor.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/xgboost_model.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/models/xgboost_model.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/analysis.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/analysis.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/detail.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/detail.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/training.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/training.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +47,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "vcs.Git",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -163,7 +152,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768023630102</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="修改">
+      <option name="closed" value="true" />
+      <created>1776350783544</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1776350783544</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -186,6 +183,7 @@
     <MESSAGE value="添加上监控仪表盘" />
     <MESSAGE value="添加上模型性能分析，检测结果详情，模型训练与评估模块" />
     <MESSAGE value="完整版" />
-    <option name="LAST_COMMIT_MESSAGE" value="完整版" />
+    <MESSAGE value="修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="修改" />
   </component>
 </project>
